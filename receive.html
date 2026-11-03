@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QRコード受信</title>
+<link rel="stylesheet" href="web/style.css">
+</head>
+<body>
+<main>
+  <h1>QRコード受信</h1>
+  <p class="lead">PCに表示したQRコードを、順番は問わずカメラで読み取ります。全部そろうと元のファイルを保存できます。カメラの利用にはHTTPS(または localhost)が必要です。</p>
+  <p><button id="start" class="primary">カメラ開始</button> <button id="reset">やり直し</button></p>
+  <video id="video" playsinline muted hidden></video>
+  <div id="message" class="msg" aria-live="polite"></div>
+  <div id="info" hidden>
+    <div id="name"></div>
+    <progress id="bar" value="0" max="1"></progress>
+    <div id="count"></div>
+    <div id="grid" class="grid"></div>
+  </div>
+  <div id="result" hidden>
+    <button id="download" class="primary">ダウンロード</button>
+  </div>
+  <p class="lead">カメラが使えないとき: <label>QR画像から読み取る <input id="image" type="file" accept="image/*" multiple></label></p>
+</main>
+<script type="module" src="web/receive.mjs"></script>
+</body>
+</html>

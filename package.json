@@ -1,0 +1,20 @@
+{
+  "name": "ql-converter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "File to QR code transfer tool (PC -> smartphone)",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "vendor": "node scripts/vendor.mjs"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "fflate": "^0.8.2",
+    "jsqr": "^1.4.0",
+    "qrcode-generator": "^1.4.4"
+  }
+}
