@@ -1,12 +1,13 @@
 import jsQR from '../vendor/jsqr.mjs';
 import { Assembler } from '../src/protocol.mjs';
+import { scanAll } from '../src/multiscan.mjs';
 
 const $ = (id) => document.getElementById(id);
 const asm = new Assembler();
 let stream = null;
 let timer = null;
 let saved = null; // { name, bytes } once verified
-let last = { text: '', at: 0 };
+const seen = new Map(); // text -> last time seen, to quiet repeats while the camera lingers
 
 const scanCanvas = document.createElement('canvas');
 const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
@@ -44,15 +45,24 @@ function stopCamera() {
   $('video').hidden = true;
 }
 
-async function handleText(text) {
+async function handleTexts(texts) {
   const now = Date.now();
-  if (text === last.text && now - last.at < 1500) return;
-  last = { text, at: now };
-  const r = asm.add(text);
-  if (r.status === 'added') message(`${r.seq}番を読み取りました`, 'ok');
-  else if (r.status === 'duplicate') message('読み取り済みのQRです');
-  else if (r.status === 'foreign') message('別のファイルのQRです。切り替える場合は「やり直し」を押してください', 'warn');
-  else message('このツールのQRではありません', 'warn');
+  const fresh = texts.filter((t) => !(seen.has(t) && now - seen.get(t) < 1500));
+  for (const t of texts) seen.set(t, now);
+  if (!fresh.length) return;
+  const added = [];
+  let dup = 0, foreign = 0, invalid = 0;
+  for (const text of fresh) {
+    const r = asm.add(text);
+    if (r.status === 'added') added.push(r.seq);
+    else if (r.status === 'duplicate') dup++;
+    else if (r.status === 'foreign') foreign++;
+    else invalid++;
+  }
+  if (added.length) message(`${added.sort((a, b) => a - b).join(', ')}番を読み取りました(${added.length}枚)`, 'ok');
+  else if (foreign) message('別のファイルのQRです。切り替える場合は「やり直し」を押してください', 'warn');
+  else if (invalid) message('このツールのQRではありません', 'warn');
+  else if (dup) message('読み取り済みのQRです');
   render();
   if (asm.complete && !saved) {
     stopCamera();
@@ -69,13 +79,13 @@ async function handleText(text) {
 function scanFrame() {
   const v = $('video');
   if (!v.videoWidth) return;
-  const scale = Math.min(1, 960 / v.videoWidth);
+  const scale = Math.min(1, 1920 / v.videoWidth);
   scanCanvas.width = Math.round(v.videoWidth * scale);
   scanCanvas.height = Math.round(v.videoHeight * scale);
   scanCtx.drawImage(v, 0, 0, scanCanvas.width, scanCanvas.height);
   const d = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-  const code = jsQR(d.data, d.width, d.height, { inversionAttempts: 'dontInvert' });
-  if (code) handleText(code.data);
+  const texts = scanAll(jsQR, d.data, d.width, d.height, { inversionAttempts: 'dontInvert' });
+  if (texts.length) handleTexts(texts);
 }
 
 async function startCamera() {
@@ -96,7 +106,7 @@ async function startCamera() {
   v.hidden = false;
   await v.play();
   message('QRコードにカメラを向けてください');
-  timer = setInterval(scanFrame, 100);
+  timer = setInterval(scanFrame, 300);
 }
 
 async function readImage(file) {
@@ -105,8 +115,8 @@ async function readImage(file) {
   scanCanvas.height = bitmap.height;
   scanCtx.drawImage(bitmap, 0, 0);
   const d = scanCtx.getImageData(0, 0, bitmap.width, bitmap.height);
-  const code = jsQR(d.data, d.width, d.height);
-  if (code) await handleText(code.data);
+  const texts = scanAll(jsQR, d.data, d.width, d.height);
+  if (texts.length) await handleTexts(texts);
   else message('画像からQRコードを検出できませんでした', 'warn');
 }
 
@@ -115,7 +125,7 @@ $('reset').addEventListener('click', () => {
   stopCamera();
   asm.reset();
   saved = null;
-  last = { text: '', at: 0 };
+  seen.clear();
   $('result').hidden = true;
   message('');
   render();
