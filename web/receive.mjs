@@ -37,7 +37,11 @@ function render() {
   $('grid').replaceChildren(...cells);
 }
 
+// scanAll blocks the main thread, so give the browser a chance to paint first
+const nextPaint = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r)));
+
 function stopCamera() {
+  $('scanning').hidden = true;
   clearInterval(timer);
   timer = null;
   stream?.getTracks().forEach((t) => t.stop());
@@ -106,18 +110,23 @@ async function startCamera() {
   v.hidden = false;
   await v.play();
   message('QRコードにカメラを向けてください');
+  $('scanning').hidden = false;
   timer = setInterval(scanFrame, 300);
 }
 
 async function readImage(file) {
+  message(`${file.name} を読み取り中…`, 'busy');
+  await nextPaint();
   const bitmap = await createImageBitmap(file);
   scanCanvas.width = bitmap.width;
   scanCanvas.height = bitmap.height;
   scanCtx.drawImage(bitmap, 0, 0);
   const d = scanCtx.getImageData(0, 0, bitmap.width, bitmap.height);
   const texts = scanAll(jsQR, d.data, d.width, d.height);
-  if (texts.length) await handleTexts(texts);
-  else message('画像からQRコードを検出できませんでした', 'warn');
+  if (texts.length) {
+    seen.clear();
+    await handleTexts(texts);
+  } else message('画像からQRコードを検出できませんでした', 'warn');
 }
 
 $('start').addEventListener('click', () => { if (!stream) startCamera(); });

@@ -37,12 +37,16 @@ async function generate() {
   $('pages').replaceChildren();
   $('actions').hidden = true;
   canvases = [];
+  say('QRコードを生成中…', 'busy');
+  await new Promise((r) => requestAnimationFrame(() => setTimeout(r)));
+  if (id !== runId) return;
   try {
     const chunkChars = Number($('chunk').value) || 600;
     const t = await encodeTransfer(current.bytes, current.name, { chunkChars });
     const { moduleCount, matrices } = buildMatrices(t.payloads, $('ec').value);
     const plan = planLayout(moduleCount, t.total, { maxPerPage: Number($('perPage').value) || 12 });
     if (id !== runId) return;
+    $('status').replaceChildren();
     t.warnings.forEach((w) => say(w, 'warn'));
     say(`${current.name}: QR ${t.total}枚 / ${plan.pageCount}ページ`, 'ok');
     for (let p = 0; p < plan.pageCount; p++) {

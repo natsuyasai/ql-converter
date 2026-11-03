@@ -12,6 +12,7 @@
   <p class="lead">PCに表示したQRコードを、順番は問わず、1ページ分をまとめてカメラに映すと一度に読み取ります(うまく読めないときは1枚ずつ近づけてください)。全部そろうと元のファイルを保存できます。カメラの利用にはHTTPS(または localhost)が必要です。</p>
   <p><button id="start" class="primary">カメラ開始</button> <button id="reset">やり直し</button></p>
   <video id="video" playsinline muted hidden></video>
+  <div id="scanning" class="scanning" hidden>スキャン中…</div>
   <div id="message" class="msg" aria-live="polite"></div>
   <div id="info" hidden>
     <div id="name"></div>
