@@ -48,8 +48,8 @@ export function drawPage(ctx, plan, pageIndex, matrices, meta) {
   ctx.fillStyle = '#000';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 64px sans-serif';
-  ctx.fillText(`${meta.name}  (${pageIndex + 1}/${pageCount} ページ)`, MARGIN, MARGIN + TITLE_H / 2);
+  ctx.font = `bold 64px 'Yu Gothic', Meiryo, 'Noto Sans CJK JP', sans-serif`;
+  ctx.fillText(`${meta.name}  (Page ${pageIndex + 1}/${pageCount})`, MARGIN, MARGIN + TITLE_H / 2);
 
   const { w, h } = cellSize(cols, rows);
   const first = pageIndex * perPage;

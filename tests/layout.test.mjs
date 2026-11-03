@@ -80,3 +80,12 @@ test('drawPage: page 2 only draws its own QRs', () => {
 test('A4 ratio is 210:297', () => {
   assert.ok(Math.abs(A4.width / A4.height - 210 / 297) < 0.001);
 });
+
+test('drawPage: fixed labels are ASCII so they render without CJK fonts', () => {
+  const { moduleCount, matrices } = buildMatrices(['a1', 'b2', 'c3']);
+  const plan = planLayout(moduleCount, 3, { maxPerPage: 2 });
+  const { ctx, calls } = mockCtx();
+  drawPage(ctx, plan, 0, matrices, { name: 'f.bin', total: 3 });
+  assert.ok(calls.texts.some((t) => t.includes('Page 1/2')));
+  assert.ok(calls.texts.every((t) => /^[\x20-\x7e]*$/.test(t)));
+});
