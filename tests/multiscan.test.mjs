@@ -45,3 +45,28 @@ test('scanAll: blank image gives nothing and input is not mutated', () => {
   const data = new Uint8ClampedArray(100 * 100 * 4).fill(255);
   assert.deepEqual(scanAll(jsQR, data, 100, 100), []);
 });
+
+test('scanAll: reads a tilted, unevenly lit photo of the page on a dark desk', async () => {
+  const { t, plan, canvas } = await render(bytes, 12);
+  const W = 1600, H = 2133;
+  const photo = createCanvas(W, H);
+  const ctx = photo.getContext('2d');
+  ctx.fillStyle = '#5a4a3a';
+  ctx.fillRect(0, 0, W, H);
+  ctx.translate(W / 2, H / 2);
+  ctx.rotate((4 * Math.PI) / 180);
+  const pw = W * 0.9;
+  ctx.drawImage(canvas, -pw / 2, -(pw * A4.height) / A4.width / 2, pw, (pw * A4.height) / A4.width);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const d = ctx.getImageData(0, 0, W, H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      const f = 1 - 0.4 * (x / W * 0.6 + y / H * 0.4);
+      const n = ((x * 7919 + y * 104729) % 41) - 20;
+      for (let c = 0; c < 3; c++) d.data[i + c] = d.data[i + c] * f + n;
+    }
+  }
+  const texts = scanAll(jsQR, d.data, W, H);
+  assert.equal(texts.length, Math.min(plan.perPage, t.total));
+});
