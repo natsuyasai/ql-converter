@@ -39,9 +39,11 @@ QRが1ページに収まれば `out.png`、複数ページなら `out-1.png`, `o
 
 ## GitHub Pagesで公開する
 
-1. このリポジトリをGitHubにpushする
+1. リポジトリ(https://github.com/natsuyasai/ql-converter)の `main` にpushする
 2. リポジトリの Settings → Pages → Branch を `main` / `/ (root)` にして保存
-3. `https://<ユーザー名>.github.io/<リポジトリ名>/`(送信)と `.../receive.html`(受信)を開く
+3. 次のURLを開く
+   - 送信: https://natsuyasai.github.io/ql-converter/
+   - 受信: https://natsuyasai.github.io/ql-converter/receive.html
 
 `vendor/` は依存ライブラリを同梱したものです(CDN不使用)。ビルド工程はありません。
 依存を更新したときだけ `npm install && npm run vendor` で作り直してください。
