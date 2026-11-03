@@ -47,6 +47,7 @@ QRが1ページに収まれば `out.png`、複数ページなら `out-1.png`, `o
 
 `vendor/` は依存ライブラリを同梱したものです(CDN不使用)。ビルド工程はありません。
 依存を更新したときだけ `npm install && npm run vendor` で作り直してください。
+読み取りには [ZXing](https://github.com/Sec-ant/zxing-wasm)(WebAssembly、`vendor/zxing_reader.wasm`)を主に使い、読めないときのみ jsQR で再試行します。PC画面を撮影した写真のような高密度なQRでも読み取れます。
 
 ## 制限と目安
 

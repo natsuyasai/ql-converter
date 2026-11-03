@@ -1,8 +1,12 @@
 import jsQR from '../vendor/jsqr.mjs';
 import { Assembler } from '../src/protocol.mjs';
-import { scanAll } from '../src/multiscan.mjs';
+import { prepareZXingModule, readBarcodes } from '../vendor/zxing-reader.mjs';
+import { decodeAll } from '../src/decode.mjs';
 
 const $ = (id) => document.getElementById(id);
+// the wasm binary is shipped in vendor/ rather than fetched from a CDN
+prepareZXingModule({ overrides: { locateFile: (file) => new URL(`../vendor/${file}`, import.meta.url).href } });
+const decoders = { readBarcodes, jsQR };
 const asm = new Assembler();
 let stream = null;
 let timer = null;
@@ -37,7 +41,7 @@ function render() {
   $('grid').replaceChildren(...cells);
 }
 
-// scanAll blocks the main thread, so give the browser a chance to paint first
+// decoding is CPU-heavy, so give the browser a chance to paint first
 const nextPaint = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r)));
 
 function stopCamera() {
@@ -80,16 +84,23 @@ async function handleTexts(texts) {
   }
 }
 
-function scanFrame() {
+let scanning = false;
+async function scanFrame() {
   const v = $('video');
-  if (!v.videoWidth) return;
-  const scale = Math.min(1, 1920 / v.videoWidth);
-  scanCanvas.width = Math.round(v.videoWidth * scale);
-  scanCanvas.height = Math.round(v.videoHeight * scale);
-  scanCtx.drawImage(v, 0, 0, scanCanvas.width, scanCanvas.height);
-  const d = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-  const texts = scanAll(jsQR, d.data, d.width, d.height, { inversionAttempts: 'dontInvert' });
-  if (texts.length) handleTexts(texts);
+  if (!v.videoWidth || scanning) return;
+  scanning = true;
+  try {
+    const scale = Math.min(1, 1920 / v.videoWidth);
+    scanCanvas.width = Math.round(v.videoWidth * scale);
+    scanCanvas.height = Math.round(v.videoHeight * scale);
+    scanCtx.drawImage(v, 0, 0, scanCanvas.width, scanCanvas.height);
+    const d = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+    // a live frame is retried several times a second, so skip jsQR and the slowest variants
+    const texts = await decodeAll({ readBarcodes }, d.data, d.width, d.height, { scales: [1, 1.5] });
+    if (texts.length && stream) await handleTexts(texts);
+  } finally {
+    scanning = false;
+  }
 }
 
 async function startCamera() {
@@ -122,7 +133,7 @@ async function readImage(file) {
   scanCanvas.height = bitmap.height;
   scanCtx.drawImage(bitmap, 0, 0);
   const d = scanCtx.getImageData(0, 0, bitmap.width, bitmap.height);
-  const texts = scanAll(jsQR, d.data, d.width, d.height);
+  const texts = await decodeAll(decoders, d.data, d.width, d.height);
   if (texts.length) {
     seen.clear();
     await handleTexts(texts);
