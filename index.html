@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ファイル → QRコード</title>
+<link rel="stylesheet" href="web/style.css">
+</head>
+<body>
+<main>
+  <h1>ファイル → QRコード</h1>
+  <p class="lead">ファイルをQRコードにして、スマホの<a href="receive.html">受信ページ</a>で読み取れます。データはこの端末の外に送信されません。</p>
+  <div class="drop" id="drop" tabindex="0">ここにファイルをドロップ、またはクリックして選択(上限 256KB)</div>
+  <input type="file" id="file" hidden>
+  <div class="opts">
+    <label>誤り訂正<select id="ec"><option>L</option><option selected>M</option><option>Q</option><option>H</option></select></label>
+    <label>1QRの文字数<input id="chunk" type="number" min="50" max="2000" value="600"></label>
+    <label>1ページの最大QR数<input id="perPage" type="number" min="1" max="24" value="12"></label>
+  </div>
+  <div id="status"></div>
+  <div id="actions" hidden><button id="saveAll" class="primary">すべて保存</button></div>
+  <div id="pages"></div>
+</main>
+<script type="module" src="web/send.mjs"></script>
+</body>
+</html>
